@@ -54,27 +54,25 @@
                 label: '月ごとの降水量の変化',
                 unit: 'mm',
                 valueLabel: '降水量 (mm)',
+                subjectLabel: '降水量', // 問題文用の主語
                 xLabel: '月',
                 labels: Array.from({length: 12}, (_, i) => `${i + 1}月`),
-                maxVal: 200, // 200mmまで
+                maxVal: 200, 
                 minGraphVal: 0,
-                gridStep: 20, // 20mmごとに数値表示
-                subGridStep: 10, // 10mmごとに補助線
+                gridStep: 20, 
+                subGridStep: 10, 
                 baseLogic: (i) => {
-                    // 日本の気候風（梅雨と秋雨にピーク、冬は乾燥）
                     const month = i + 1;
-                    // ランダム係数
                     const r = () => Math.random() * 30 - 15;
-                    
                     if (month === 1) return 50 + r();
                     if (month === 2) return 60 + r();
                     if (month === 3) return 100 + r();
                     if (month === 4) return 120 + r();
                     if (month === 5) return 130 + r();
-                    if (month === 6) return 180 + r(); // 梅雨
+                    if (month === 6) return 180 + r(); 
                     if (month === 7) return 160 + r();
                     if (month === 8) return 130 + r();
-                    if (month === 9) return 190 + r(); // 台風・秋雨
+                    if (month === 9) return 190 + r(); 
                     if (month === 10) return 150 + r();
                     if (month === 11) return 80 + r();
                     if (month === 12) return 40 + r();
@@ -85,6 +83,7 @@
                 label: '月ごとの平均気温の変化',
                 unit: '度',
                 valueLabel: '平均気温 (℃)',
+                subjectLabel: '平均気温', // 問題文用の主語
                 xLabel: '月',
                 labels: Array.from({length: 12}, (_, i) => `${i + 1}月`),
                 maxVal: 35,
@@ -92,15 +91,9 @@
                 gridStep: 5,
                 subGridStep: 1,
                 baseLogic: (i) => {
-                    // 1月と12月が近くなるようにCos波を使う
-                    // 1月(i=0)を寒く、8月(i=7)を暑く
                     const month = i + 1;
-                    // (month - 8) / 12 * 2PI で8月がピーク(cos(0)=1)
-                    // 平均16度、振幅13度くらいに設定
                     const rad = (month - 8) / 12 * 2 * Math.PI;
                     const base = 16 + 13 * Math.cos(rad);
-                    
-                    // 少しランダムさを加える(-2 ~ +2)
                     return base + (Math.random() * 4 - 2);
                 }
             },
@@ -108,14 +101,14 @@
                 label: '1日の気温の変化 (夏)',
                 unit: '度',
                 valueLabel: '気温 (℃)',
+                subjectLabel: '気温', // 問題文用の主語
                 xLabel: '時',
                 labels: Array.from({length: 12}, (_, i) => `${i + 6}時`),
                 maxVal: 40,
-                minGraphVal: 20, // 20度スタート
+                minGraphVal: 25, // 25度スタート
                 gridStep: 5,
                 subGridStep: 1,
                 baseLogic: (i) => {
-                    // 20~40の間で推移
                     const hour = i + 6;
                     if (hour < 14) return 26 + (hour - 6) * 1.5 + Math.random() * 2;
                     return 36 - (hour - 14) * 1.5 + Math.random() * 2;
@@ -125,9 +118,10 @@
                 label: '1日の気温の変化 (冬)',
                 unit: '度',
                 valueLabel: '気温 (℃)',
+                subjectLabel: '気温', // 問題文用の主語
                 xLabel: '時',
                 labels: Array.from({length: 12}, (_, i) => `${i + 6}時`),
-                maxVal: 20,
+                maxVal: 15, // 15度まで
                 minGraphVal: 0,
                 gridStep: 5,
                 subGridStep: 1,
@@ -157,7 +151,7 @@
                 itemCount: 12,
                 questionCount: 4,
                 selectedTypes: ['read', 'max', 'min', 'increase_max', 'diff', 'cond_more'],
-                showTable: true
+                showTable: false // デフォルトでオフ
             },
             drillData: {
                 items: [],
@@ -200,13 +194,13 @@
                 const target = items[Math.floor(Math.random() * items.length)];
                 
                 // 単位に基づいて主語と形容詞を切り替え
-                const subject = theme.unit === '度' ? '気温' : '降水量';
+                const subject = theme.subjectLabel; // 設定したsubjectLabelを使用
                 const adjectiveMax = theme.unit === '度' ? '高い' : '多い';
                 const adjectiveMin = theme.unit === '度' ? '低い' : '少ない';
 
                 switch (type) {
                     case 'read':
-                        q.text = `「${target.name}」のときの${theme.unit === '度' ? '平均気温' : '降水量'}は、何${unit} ですか。`;
+                        q.text = `${target.name}のときの${subject}は、何${unit} ですか。`;
                         q.answer = `${target.value}${unit}`;
                         break;
                     case 'max':
@@ -232,7 +226,7 @@
                             }
                         }
                         if (maxInc <= 0) {
-                            q.text = `「${target.name}」のときの${theme.unit === '度' ? '平均気温' : '降水量'}は、何${unit} ですか。`;
+                            q.text = `${target.name}のときの${subject}は、何${unit} ですか。`;
                             q.answer = `${target.value}${unit}`;
                         } else {
                             q.text = `一番 ${theme.unit === '度' ? '上がった' : '増えた'}のは、いつからいつの間ですか。`;
@@ -250,7 +244,7 @@
                             }
                         }
                         if (maxDec <= 0) {
-                            q.text = `「${target.name}」のときの${theme.unit === '度' ? '平均気温' : '降水量'}は、何${unit} ですか。`;
+                            q.text = `${target.name}のときの${subject}は、何${unit} ですか。`;
                             q.answer = `${target.value}${unit}`;
                         } else {
                             q.text = `一番 ${theme.unit === '度' ? '下がった' : '減った'}のは、いつからいつの間ですか。`;
@@ -264,7 +258,7 @@
                         const valA = items[idxA];
                         const valB = items[idxB];
                         const diffVal = Math.abs(valA.value - valB.value);
-                        q.text = `「${valA.name}」と「${valB.name}」の ちがいは 何${unit} ですか。`;
+                        q.text = `${valA.name}と${valB.name}の ちがいは 何${unit} ですか。`;
                         q.answer = `${diffVal}${unit}`;
                         break;
                     case 'cond_more':
