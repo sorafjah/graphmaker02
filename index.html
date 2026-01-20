@@ -8,11 +8,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts (BIZ UDGothic) -->
     <link href="https://fonts.googleapis.com/css2?family=BIZ+UDGothic:wght@400;700&display=swap" rel="stylesheet">
-    
+
     <style>
-        body {
-            font-family: 'BIZ UDGothic', sans-serif;
-        }
+        body { font-family: 'BIZ UDGothic', sans-serif; }
         /* 印刷時の設定 */
         @media print {
             @page { margin: 10mm; }
@@ -31,485 +29,618 @@
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen">
 
-    <div id="app">
-        <!-- JavaScriptで描画 -->
-    </div>
+<div id="app"></div>
 
-    <script>
-        // --- アイコン ---
-        const Icons = {
-            settings: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>`,
-            fileText: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`,
-            checkSquare: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>`,
-            refresh: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>`,
-            printer: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>`,
-            arrowLeft: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>`,
-            eye: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`,
-            eyeOff: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`
-        };
+<script>
+    // --- アイコン ---
+    const Icons = {
+        settings: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.47a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path><circle cx="12" cy="12" r="3"></circle></svg>`,
+        fileText: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>`,
+        checkSquare: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></svg>`,
+        refresh: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 4v6h-6"></path><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>`,
+        printer: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>`,
+        arrowLeft: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>`,
+        eye: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`,
+        eyeOff: `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path><line x1="1" y1="1" x2="23" y2="23"></line></svg>`
+    };
 
-        // --- データ定義 ---
-        const THEMES = {
-            monthly_rain: {
-                label: '月ごとの降水量の変化',
-                unit: 'mm',
-                valueLabel: '降水量 (mm)',
-                subjectLabel: '降水量', // 問題文用の主語
-                xLabel: '月',
-                labels: Array.from({length: 12}, (_, i) => `${i + 1}月`),
-                maxVal: 200, 
-                minGraphVal: 0,
-                gridStep: 20, 
-                subGridStep: 10, 
-                baseLogic: (i) => {
-                    const month = i + 1;
-                    const r = () => Math.random() * 30 - 15;
-                    if (month === 1) return 50 + r();
-                    if (month === 2) return 60 + r();
-                    if (month === 3) return 100 + r();
-                    if (month === 4) return 120 + r();
-                    if (month === 5) return 130 + r();
-                    if (month === 6) return 180 + r(); 
-                    if (month === 7) return 160 + r();
-                    if (month === 8) return 130 + r();
-                    if (month === 9) return 190 + r(); 
-                    if (month === 10) return 150 + r();
-                    if (month === 11) return 80 + r();
-                    if (month === 12) return 40 + r();
-                    return 100;
+    // --- 便利関数 ---
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    const rand = (a, b) => a + Math.random() * (b - a);
+    const choice = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+    // --- データ定義 ---
+    const THEMES = {
+        weekly_temp: {
+            label: '1週間の気温の変化',
+            unit: '度',
+            valueLabel: '気温 (℃)',
+            subjectLabel: '気温',
+            xLabel: '曜日',
+            labels: ['月', '火', '水', '木', '金', '土', '日'],
+            maxVal: 35,
+            minGraphVal: 0,
+            gridStep: 5,
+            subGridStep: 1,
+
+            // ★ ここがポイント：パターン生成
+            seriesGenerator: (count) => {
+                const patterns = [
+                    'smooth',
+                    'up',
+                    'down',
+                    'zigzag',
+                    'jump_up',
+                    'jump_down',
+                    'up_then_down',
+                    'down_then_up',
+                    'flat_then_jump'
+                ];
+                const p = choice(patterns);
+
+                // 値の“だいたいの季節感”を少しだけ出す（毎回ランダム）
+                // 例）春〜秋寄り：12〜28度、冬寄り：2〜15度、暑め：22〜33度
+                const season = choice(['mild', 'cool', 'hot']);
+                let baseRange;
+                if (season === 'cool') baseRange = [3, 15];
+                else if (season === 'hot') baseRange = [22, 33];
+                else baseRange = [12, 28];
+
+                const base = rand(baseRange[0], baseRange[1]);
+                let vals = new Array(count).fill(base);
+
+                if (p === 'smooth') {
+                    const amp = rand(2, 6);
+                    const phase = rand(0, Math.PI * 2);
+                    const drift = rand(-0.6, 0.6);
+                    for (let i = 0; i < count; i++) {
+                        const t = i / (count - 1 || 1);
+                        const wave = Math.sin(t * Math.PI * 2 + phase);
+                        vals[i] = base + amp * wave + drift * i + rand(-0.6, 0.6);
+                    }
+                    // ちょい平滑化（滑らか寄り）
+                    vals = vals.map((v, i) => {
+                        const a = vals[Math.max(0, i - 1)];
+                        const b = vals[i];
+                        const c = vals[Math.min(count - 1, i + 1)];
+                        return (a + b + c) / 3;
+                    });
                 }
-            },
-            monthly_temp: {
-                label: '月ごとの平均気温の変化',
-                unit: '度',
-                valueLabel: '平均気温 (℃)',
-                subjectLabel: '平均気温', // 問題文用の主語
-                xLabel: '月',
-                labels: Array.from({length: 12}, (_, i) => `${i + 1}月`),
-                maxVal: 35,
-                minGraphVal: 0,
-                gridStep: 5,
-                subGridStep: 1,
-                baseLogic: (i) => {
-                    const month = i + 1;
-                    const rad = (month - 8) / 12 * 2 * Math.PI;
-                    const base = 16 + 13 * Math.cos(rad);
-                    return base + (Math.random() * 4 - 2);
+
+                if (p === 'up' || p === 'down') {
+                    const start = base + rand(-3, 3);
+                    const step = rand(0.6, 3.0);
+                    for (let i = 0; i < count; i++) {
+                        const dir = (p === 'up') ? 1 : -1;
+                        vals[i] = start + dir * step * i + rand(-0.6, 0.6);
+                    }
+                    // 単調性を保ちやすいように軽く補正
+                    for (let i = 1; i < count; i++) {
+                        if (p === 'up' && vals[i] < vals[i - 1] - 0.2) vals[i] = vals[i - 1] + rand(0.2, 1.0);
+                        if (p === 'down' && vals[i] > vals[i - 1] + 0.2) vals[i] = vals[i - 1] - rand(0.2, 1.0);
+                    }
                 }
-            },
-            daily_temp_summer: {
-                label: '1日の気温の変化 (夏)',
-                unit: '度',
-                valueLabel: '気温 (℃)',
-                subjectLabel: '気温', // 問題文用の主語
-                xLabel: '時',
-                labels: Array.from({length: 12}, (_, i) => `${i + 6}時`),
-                maxVal: 40,
-                minGraphVal: 25, // 25度スタート
-                gridStep: 5,
-                subGridStep: 1,
-                baseLogic: (i) => {
-                    const hour = i + 6;
-                    if (hour < 14) return 26 + (hour - 6) * 1.5 + Math.random() * 2;
-                    return 36 - (hour - 14) * 1.5 + Math.random() * 2;
+
+                if (p === 'zigzag') {
+                    let v = base + rand(-2, 2);
+                    const swing = rand(1.5, 4.5);
+                    const drift = rand(-0.4, 0.4);
+                    for (let i = 0; i < count; i++) {
+                        const sign = (i % 2 === 0) ? 1 : -1;
+                        v = v + sign * swing + drift + rand(-0.5, 0.5);
+                        vals[i] = v;
+                    }
                 }
-            },
-            daily_temp_winter: {
-                label: '1日の気温の変化 (冬)',
-                unit: '度',
-                valueLabel: '気温 (℃)',
-                subjectLabel: '気温', // 問題文用の主語
-                xLabel: '時',
-                labels: Array.from({length: 12}, (_, i) => `${i + 6}時`),
-                maxVal: 15, // 15度まで
-                minGraphVal: 0,
-                gridStep: 5,
-                subGridStep: 1,
-                baseLogic: (i) => {
-                    const hour = i + 6;
-                    if (hour < 14) return 2 + (hour - 6) * 1 + Math.random();
-                    return 10 - (hour - 14) * 1.2 + Math.random();
+
+                if (p === 'jump_up' || p === 'jump_down') {
+                    const jumpIdx = Math.floor(rand(2, count - 2));
+                    const preTrend = rand(-0.5, 1.2);
+                    const jump = rand(6, 12) * (p === 'jump_up' ? 1 : -1);
+
+                    let v = base + rand(-2, 2);
+                    for (let i = 0; i < count; i++) {
+                        if (i === jumpIdx) v += jump;
+                        v += preTrend + rand(-0.6, 0.6);
+                        vals[i] = v;
+                    }
                 }
+
+                if (p === 'up_then_down' || p === 'down_then_up') {
+                    const peakIdx = Math.floor(rand(2, count - 2));
+                    const upStep = rand(0.8, 2.8);
+                    const downStep = rand(0.8, 2.8);
+                    let v = base + rand(-2, 2);
+                    for (let i = 0; i < count; i++) {
+                        if (i <= peakIdx) {
+                            v += (p === 'up_then_down' ? upStep : -downStep) + rand(-0.6, 0.6);
+                        } else {
+                            v += (p === 'up_then_down' ? -downStep : upStep) + rand(-0.6, 0.6);
+                        }
+                        vals[i] = v;
+                    }
+                }
+
+                if (p === 'flat_then_jump') {
+                    const jumpIdx = Math.floor(rand(2, count - 1));
+                    const flatNoise = rand(0.1, 0.6);
+                    const jump = choice([rand(6, 11), -rand(6, 11)]);
+                    let v = base + rand(-2, 2);
+                    for (let i = 0; i < count; i++) {
+                        if (i < jumpIdx) {
+                            v += rand(-flatNoise, flatNoise);
+                        } else if (i === jumpIdx) {
+                            v += jump;
+                        } else {
+                            v += rand(-1.2, 1.2);
+                        }
+                        vals[i] = v;
+                    }
+                }
+
+                // 最後に“現実っぽく”範囲内へ
+                vals = vals.map(v => clamp(v, 0, 35));
+
+                // 7点しかないので、極端に上下しすぎたときだけ少し丸める
+                const span = Math.max(...vals) - Math.min(...vals);
+                if (span > 22) {
+                    vals = vals.map((v, i) => {
+                        const a = vals[Math.max(0, i - 1)];
+                        const b = vals[i];
+                        const c = vals[Math.min(count - 1, i + 1)];
+                        return (a + 2 * b + c) / 4;
+                    });
+                }
+
+                return vals;
             }
-        };
+        },
 
-        const QUESTION_TYPES = {
-            read: { id: 'read', label: '値を読み取る' },
-            max: { id: 'max', label: '一番大きいとき' },
-            min: { id: 'min', label: '一番小さいとき' },
-            increase_max: { id: 'increase_max', label: '一番増えた期間' },
-            decrease_max: { id: 'decrease_max', label: '一番減った期間' },
-            diff: { id: 'diff', label: '変化の差（ちがい）' },
-            cond_more: { id: 'cond_more', label: '〇〇以上のとき' }
-        };
-
-        // --- アプリケーションの状態 ---
-        let state = {
-            mode: 'settings',
-            config: {
-                theme: 'monthly_rain',
-                itemCount: 12,
-                questionCount: 4,
-                selectedTypes: ['read', 'max', 'min', 'increase_max', 'diff', 'cond_more'],
-                showTable: false // デフォルトでオフ
-            },
-            drillData: {
-                items: [],
-                questions: [],
-                unit: '',
-                themeInfo: null
-            },
-            showAns: false
-        };
-
-        // --- ロジック ---
-
-        function generateDrill() {
-            const theme = THEMES[state.config.theme];
-            const count = Math.min(state.config.itemCount, theme.labels.length); 
-            const unit = theme.unit;
-            
-            // 1. データの生成
-            let items = [];
-            const labels = theme.labels.slice(0, count);
-
-            for (let i = 0; i < count; i++) {
-                let val = Math.round(theme.baseLogic(i));
-                // 範囲制限
-                val = Math.max(theme.minGraphVal, Math.min(theme.maxVal, val));
-                items.push({
-                    name: labels[i],
-                    value: val
-                });
+        monthly_temp: {
+            label: '月ごとの平均気温の変化',
+            unit: '度',
+            valueLabel: '平均気温 (℃)',
+            subjectLabel: '平均気温',
+            xLabel: '月',
+            labels: Array.from({length: 12}, (_, i) => `${i + 1}月`),
+            maxVal: 35,
+            minGraphVal: 0,
+            gridStep: 5,
+            subGridStep: 1,
+            baseLogic: (i) => {
+                const month = i + 1;
+                const rad = (month - 8) / 12 * 2 * Math.PI;
+                const base = 16 + 13 * Math.cos(rad);
+                return base + (Math.random() * 4 - 2);
             }
+        },
+        daily_temp_summer: {
+            label: '1日の気温の変化 (夏)',
+            unit: '度',
+            valueLabel: '気温 (℃)',
+            subjectLabel: '気温',
+            xLabel: '時',
+            labels: Array.from({length: 12}, (_, i) => `${i + 6}時`),
+            maxVal: 40,
+            minGraphVal: 25,
+            gridStep: 5,
+            subGridStep: 1,
+            baseLogic: (i) => {
+                const hour = i + 6;
+                if (hour < 14) return 26 + (hour - 6) * 1.5 + Math.random() * 2;
+                return 36 - (hour - 14) * 1.5 + Math.random() * 2;
+            }
+        },
+        daily_temp_winter: {
+            label: '1日の気温の変化 (冬)',
+            unit: '度',
+            valueLabel: '気温 (℃)',
+            subjectLabel: '気温',
+            xLabel: '時',
+            labels: Array.from({length: 12}, (_, i) => `${i + 6}時`),
+            maxVal: 15,
+            minGraphVal: 0,
+            gridStep: 5,
+            subGridStep: 1,
+            baseLogic: (i) => {
+                const hour = i + 6;
+                if (hour < 14) return 2 + (hour - 6) * 1 + Math.random();
+                return 10 - (hour - 14) * 1.2 + Math.random();
+            }
+        }
+    };
 
-            // 2. 問題の生成
-            let generatedQuestions = [];
-            let pool = [...state.config.selectedTypes].sort(() => 0.5 - Math.random());
-            if (pool.length === 0) pool = ['read'];
+    const QUESTION_TYPES = {
+        read: { id: 'read', label: '値を読み取る' },
+        max: { id: 'max', label: '一番大きいとき' },
+        min: { id: 'min', label: '一番小さいとき' },
+        increase_max: { id: 'increase_max', label: '一番増えた期間' },
+        decrease_max: { id: 'decrease_max', label: '一番減った期間' },
+        diff: { id: 'diff', label: '変化の差（ちがい）' },
+        cond_more: { id: 'cond_more', label: '〇〇以上のとき' }
+    };
 
-            for (let i = 0; i < state.config.questionCount; i++) {
-                const type = pool[i % pool.length];
-                let q = { text: '', answer: '' };
-                const target = items[Math.floor(Math.random() * items.length)];
-                
-                // 単位に基づいて主語と形容詞を切り替え
-                const subject = theme.subjectLabel; // 設定したsubjectLabelを使用
-                const adjectiveMax = theme.unit === '度' ? '高い' : '多い';
-                const adjectiveMin = theme.unit === '度' ? '低い' : '少ない';
+    // --- アプリケーションの状態 ---
+    let state = {
+        mode: 'settings',
+        config: {
+            theme: 'weekly_temp',
+            itemCount: 7,
+            questionCount: 4,
+            selectedTypes: ['read', 'max', 'min', 'increase_max', 'diff', 'cond_more'],
+            showTable: false
+        },
+        drillData: {
+            items: [],
+            questions: [],
+            unit: '',
+            themeInfo: null
+        },
+        showAns: false
+    };
 
-                switch (type) {
-                    case 'read':
+    // --- ロジック ---
+
+    function generateDrill() {
+        const theme = THEMES[state.config.theme];
+        const maxCount = theme.labels.length;
+        const count = Math.min(state.config.itemCount, maxCount);
+        const unit = theme.unit;
+
+        // 1. データの生成
+        let items = [];
+        const labels = theme.labels.slice(0, count);
+
+        // ★ テーマに seriesGenerator があればそれを使う（1週間気温がここ）
+        let rawVals = null;
+        if (typeof theme.seriesGenerator === 'function') {
+            rawVals = theme.seriesGenerator(count);
+        }
+
+        for (let i = 0; i < count; i++) {
+            let val;
+            if (rawVals) {
+                val = Math.round(rawVals[i]);
+            } else {
+                val = Math.round(theme.baseLogic(i));
+            }
+            val = Math.max(theme.minGraphVal, Math.min(theme.maxVal, val));
+            items.push({ name: labels[i], value: val });
+        }
+
+        // 2. 問題の生成
+        let generatedQuestions = [];
+        let pool = [...state.config.selectedTypes].sort(() => 0.5 - Math.random());
+        if (pool.length === 0) pool = ['read'];
+
+        for (let i = 0; i < state.config.questionCount; i++) {
+            const type = pool[i % pool.length];
+            let q = { text: '', answer: '' };
+            const target = items[Math.floor(Math.random() * items.length)];
+
+            const subject = theme.subjectLabel;
+            const adjectiveMax = theme.unit === '度' ? '高い' : '多い';
+            const adjectiveMin = theme.unit === '度' ? '低い' : '少ない';
+
+            switch (type) {
+                case 'read':
+                    q.text = `${target.name}のときの${subject}は、何${unit} ですか。`;
+                    q.answer = `${target.value}${unit}`;
+                    break;
+                case 'max':
+                    const maxVal = Math.max(...items.map(i => i.value));
+                    const maxItem = items.find(i => i.value === maxVal);
+                    q.text = `一番 ${subject}が${adjectiveMax}のは、何${theme.xLabel} ですか。`;
+                    q.answer = maxItem.name;
+                    break;
+                case 'min':
+                    const minVal = Math.min(...items.map(i => i.value));
+                    const minItem = items.find(i => i.value === minVal);
+                    q.text = `一番 ${subject}が${adjectiveMin}のは、何${theme.xLabel} ですか。`;
+                    q.answer = minItem.name;
+                    break;
+                case 'increase_max':
+                    let maxInc = -999;
+                    let incPeriod = '';
+                    for (let j = 0; j < items.length - 1; j++) {
+                        let diff = items[j + 1].value - items[j].value;
+                        if (diff > maxInc) {
+                            maxInc = diff;
+                            incPeriod = `${items[j].name}から${items[j + 1].name}`;
+                        }
+                    }
+                    if (maxInc <= 0) {
                         q.text = `${target.name}のときの${subject}は、何${unit} ですか。`;
                         q.answer = `${target.value}${unit}`;
-                        break;
-                    case 'max':
-                        const maxVal = Math.max(...items.map(i => i.value));
-                        const maxItem = items.find(i => i.value === maxVal);
-                        q.text = `一番 ${subject}が${adjectiveMax}のは、何${theme.xLabel} ですか。`;
-                        q.answer = maxItem.name;
-                        break;
-                    case 'min':
-                        const minVal = Math.min(...items.map(i => i.value));
-                        const minItem = items.find(i => i.value === minVal);
-                        q.text = `一番 ${subject}が${adjectiveMin}のは、何${theme.xLabel} ですか。`;
-                        q.answer = minItem.name;
-                        break;
-                    case 'increase_max':
-                        let maxInc = -999;
-                        let incPeriod = '';
-                        for(let j=0; j<items.length-1; j++) {
-                            let diff = items[j+1].value - items[j].value;
-                            if(diff > maxInc) {
-                                maxInc = diff;
-                                incPeriod = `${items[j].name}から${items[j+1].name}`;
-                            }
+                    } else {
+                        q.text = `一番 ${theme.unit === '度' ? '上がった' : '増えた'}のは、いつからいつの間ですか。`;
+                        q.answer = incPeriod;
+                    }
+                    break;
+                case 'decrease_max':
+                    let maxDec = -999;
+                    let decPeriod = '';
+                    for (let j = 0; j < items.length - 1; j++) {
+                        let diff = items[j].value - items[j + 1].value;
+                        if (diff > maxDec) {
+                            maxDec = diff;
+                            decPeriod = `${items[j].name}から${items[j + 1].name}`;
                         }
-                        if (maxInc <= 0) {
-                            q.text = `${target.name}のときの${subject}は、何${unit} ですか。`;
-                            q.answer = `${target.value}${unit}`;
-                        } else {
-                            q.text = `一番 ${theme.unit === '度' ? '上がった' : '増えた'}のは、いつからいつの間ですか。`;
-                            q.answer = incPeriod;
-                        }
-                        break;
-                    case 'decrease_max':
-                        let maxDec = -999;
-                        let decPeriod = '';
-                        for(let j=0; j<items.length-1; j++) {
-                            let diff = items[j].value - items[j+1].value;
-                            if(diff > maxDec) {
-                                maxDec = diff;
-                                decPeriod = `${items[j].name}から${items[j+1].name}`;
-                            }
-                        }
-                        if (maxDec <= 0) {
-                            q.text = `${target.name}のときの${subject}は、何${unit} ですか。`;
-                            q.answer = `${target.value}${unit}`;
-                        } else {
-                            q.text = `一番 ${theme.unit === '度' ? '下がった' : '減った'}のは、いつからいつの間ですか。`;
-                            q.answer = decPeriod;
-                        }
-                        break;
-                    case 'diff':
-                        const idxA = Math.floor(Math.random() * items.length);
-                        let idxB = Math.floor(Math.random() * items.length);
-                        while(idxA === idxB && items.length > 1) idxB = Math.floor(Math.random() * items.length);
-                        const valA = items[idxA];
-                        const valB = items[idxB];
-                        const diffVal = Math.abs(valA.value - valB.value);
-                        q.text = `${valA.name}と${valB.name}の ちがいは 何${unit} ですか。`;
-                        q.answer = `${diffVal}${unit}`;
-                        break;
-                    case 'cond_more':
-                        const vals = items.map(i => i.value);
-                        const mid = Math.floor((Math.min(...vals) + Math.max(...vals)) / 2);
-                        const step = theme.subGridStep || 1;
-                        let threshold = Math.round(mid / step) * step;
-                        if (threshold <= Math.min(...vals)) threshold += step;
+                    }
+                    if (maxDec <= 0) {
+                        q.text = `${target.name}のときの${subject}は、何${unit} ですか。`;
+                        q.answer = `${target.value}${unit}`;
+                    } else {
+                        q.text = `一番 ${theme.unit === '度' ? '下がった' : '減った'}のは、いつからいつの間ですか。`;
+                        q.answer = decPeriod;
+                    }
+                    break;
+                case 'diff':
+                    const idxA = Math.floor(Math.random() * items.length);
+                    let idxB = Math.floor(Math.random() * items.length);
+                    while (idxA === idxB && items.length > 1) idxB = Math.floor(Math.random() * items.length);
+                    const valA = items[idxA];
+                    const valB = items[idxB];
+                    const diffVal = Math.abs(valA.value - valB.value);
+                    q.text = `${valA.name}と${valB.name}の ちがいは 何${unit} ですか。`;
+                    q.answer = `${diffVal}${unit}`;
+                    break;
+                case 'cond_more':
+                    const vals = items.map(i => i.value);
+                    const mid = Math.floor((Math.min(...vals) + Math.max(...vals)) / 2);
+                    const step = theme.subGridStep || 1;
+                    let threshold = Math.round(mid / step) * step;
+                    if (threshold <= Math.min(...vals)) threshold += step;
 
-                        const countMore = items.filter(i => i.value >= threshold).length;
-                        q.text = `${threshold}${unit}以上のときは、全部で 何回ありますか。`;
-                        q.answer = `${countMore}回`;
-                        break;
-                }
-                generatedQuestions.push(q);
+                    const countMore = items.filter(i => i.value >= threshold).length;
+                    q.text = `${threshold}${unit}以上のときは、全部で 何回ありますか。`;
+                    q.answer = `${countMore}回`;
+                    break;
             }
-
-            state.drillData = { items, questions: generatedQuestions, unit, themeInfo: theme };
-            state.mode = 'print';
-            state.showAns = false;
-            render();
+            generatedQuestions.push(q);
         }
 
-        // --- UI 操作 ---
-        function handleConfigChange(key, value) {
-            state.config[key] = value;
-            if (key === 'itemCount') {
-                if (value > 12) state.config.itemCount = 12;
-                if (value < 2) state.config.itemCount = 2;
-            }
-        }
-
-        function toggleType(id) {
-            const current = state.config.selectedTypes;
-            state.config.selectedTypes = current.includes(id) 
-                ? (current.length > 1 ? current.filter(t => t !== id) : current)
-                : [...current, id];
-            render();
-        }
-
-        function forceRender() {
-            render();
-        }
-
-        function render() {
-            const app = document.getElementById('app');
-            app.innerHTML = '';
-
-            if (state.mode === 'settings') {
-                renderSettings(app);
-            } else {
-                renderPrint(app);
-            }
-        }
-
-        function renderSettings(container) {
-            const themeBtns = Object.entries(THEMES).map(([key, t]) => `
-                <button onclick="handleConfigChange('theme', '${key}'); forceRender()" class="p-3 rounded border text-left transition-all ${state.config.theme === key ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-500 font-bold' : 'border-gray-300 hover:bg-gray-50'}">${t.label}</button>
-            `).join('');
-
-            const typeChecks = Object.entries(QUESTION_TYPES).map(([id, t]) => `
-                <label class="flex items-center gap-2 p-2 rounded hover:bg-gray-100 cursor-pointer border border-transparent">
-                    <div onclick="toggleType('${id}')" class="w-5 h-5 rounded border flex items-center justify-center ${state.config.selectedTypes.includes(id) ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-400'}">
-                        ${state.config.selectedTypes.includes(id) ? Icons.checkSquare : ''}
-                    </div>
-                    <span class="text-sm">${t.label}</span>
-                </label>
-            `).join('');
-
-            container.innerHTML = `
-                <div class="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-lg mt-8 border border-gray-200">
-                    <h2 class="text-xl font-bold mb-6 flex items-center gap-2 border-b pb-2">
-                        <span class="text-gray-600">${Icons.settings}</span> 折れ線グラフドリル設定
-                    </h2>
-                    <div class="space-y-6">
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">テーマ</label>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">${themeBtns}</div>
-                        </div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-bold text-gray-700">データ数 (最大12)</label>
-                                <div class="flex items-center gap-2 mt-1">
-                                    <button onclick="handleConfigChange('itemCount', Math.max(2, state.config.itemCount - 1)); forceRender()" class="w-8 h-8 bg-gray-200 rounded hover:bg-gray-300">-</button>
-                                    <span class="text-xl font-bold w-12 text-center">${state.config.itemCount}</span>
-                                    <button onclick="handleConfigChange('itemCount', Math.min(12, state.config.itemCount + 1)); forceRender()" class="w-8 h-8 bg-gray-200 rounded hover:bg-gray-300">+</button>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-bold text-gray-700">問題数 (最大7)</label>
-                                <div class="flex items-center gap-2 mt-1">
-                                    <button onclick="handleConfigChange('questionCount', Math.max(1, state.config.questionCount - 1)); forceRender()" class="w-8 h-8 bg-gray-200 rounded hover:bg-gray-300">-</button>
-                                    <span class="text-xl font-bold w-12 text-center">${state.config.questionCount}</span>
-                                    <button onclick="handleConfigChange('questionCount', Math.min(7, state.config.questionCount + 1)); forceRender()" class="w-8 h-8 bg-gray-200 rounded hover:bg-gray-300">+</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="mb-2 bg-gray-50 p-4 rounded border border-gray-200">
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <div onclick="handleConfigChange('showTable', !state.config.showTable); forceRender()" class="w-5 h-5 rounded border flex items-center justify-center ${state.config.showTable ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-400'}">
-                                    ${state.config.showTable ? Icons.checkSquare : ''}
-                                </div>
-                                <span class="font-bold text-gray-700">表（テーブル）を表示する</span>
-                            </label>
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-bold text-gray-700 mb-2">出題内容</label>
-                            <div class="grid grid-cols-2 gap-1">${typeChecks}</div>
-                        </div>
-                        <button onclick="generateDrill()" class="w-full py-4 bg-blue-700 text-white rounded-lg font-bold text-lg hover:bg-blue-800 shadow-md flex items-center justify-center gap-2 transition">
-                            ${Icons.fileText} ドリルを作成
-                        </button>
-                    </div>
-                </div>
-            `;
-        }
-
-        function renderPrint(container) {
-            const { items, questions, unit, themeInfo } = state.drillData;
-            const maxGraphVal = themeInfo.maxVal;
-            const minGraphVal = themeInfo.minGraphVal;
-            const gridStep = themeInfo.gridStep;
-            const subGridStep = themeInfo.subGridStep;
-
-            // グラフ描画（SVG）設定
-            const padding = 40;
-            const graphW = 600;
-            const graphH = 350; 
-            const stepX = (graphW - padding * 2) / (items.length - 1 || 1);
-            
-            const scaleY = (val) => {
-                const range = maxGraphVal - minGraphVal;
-                const ratio = (val - minGraphVal) / range;
-                return (graphH - padding) - (ratio * (graphH - padding * 2));
-            };
-
-            let points = items.map((it, i) => {
-                const x = padding + (i * stepX);
-                const y = scaleY(it.value);
-                return { x, y, val: it.value, name: it.name };
-            });
-
-            // 線と点
-            const polylinePoints = points.map(p => `${p.x},${p.y}`).join(' ');
-            const circles = points.map(p => `<circle cx="${p.x}" cy="${p.y}" r="4" fill="black" />`).join('');
-            
-            // グリッド線描画ループ
-            let gridLines = '';
-            for(let v = minGraphVal; v <= maxGraphVal; v += subGridStep) {
-                const y = scaleY(v);
-                const isGridStep = (v % gridStep === 0);
-                const strokeColor = isGridStep ? "#9ca3af" : "#e5e7eb"; 
-                const strokeWidth = isGridStep ? 1.5 : 1;
-                
-                gridLines += `<line x1="${padding}" y1="${y}" x2="${graphW-padding}" y2="${y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />`;
-                
-                if (isGridStep) {
-                    gridLines += `<text x="${padding-8}" y="${y+4}" text-anchor="end" font-size="12" fill="#1f2937" font-weight="bold">${v}</text>`;
-                }
-            }
-            
-            gridLines += `<text x="${padding-20}" y="${padding-20}" font-size="12" font-weight="bold">(${unit})</text>`;
-
-            const xLabels = points.map(p => {
-                const fontSize = items.length > 10 ? 10 : 12;
-                return `<text x="${p.x}" y="${graphH - padding + 20}" text-anchor="middle" font-size="${fontSize}" font-weight="bold">${p.name}</text>`;
-            }).join('');
-
-            const svgHtml = `
-                <svg viewBox="0 0 ${graphW} ${graphH}" class="w-full h-auto p-2 bg-white">
-                    ${gridLines}
-                    ${points.map(p => `<line x1="${p.x}" y1="${padding}" x2="${p.x}" y2="${graphH-padding}" stroke="#f3f4f6" stroke-width="1" />`).join('')}
-                    
-                    <!-- 枠線 -->
-                    <line x1="${padding}" y1="${padding}" x2="${padding}" y2="${graphH-padding}" stroke="black" stroke-width="2" />
-                    <line x1="${padding}" y1="${graphH-padding}" x2="${graphW-padding}" y2="${graphH-padding}" stroke="black" stroke-width="2" />
-                    
-                    <polyline points="${polylinePoints}" fill="none" stroke="black" stroke-width="2" stroke-linejoin="round" />
-                    ${circles}
-                    
-                    ${xLabels}
-                </svg>
-            `;
-
-            container.innerHTML = `
-                <div class="min-h-screen bg-white">
-                    <div class="no-print bg-gray-800 text-white p-4 sticky top-0 z-50 shadow-md">
-                        <div class="max-w-4xl mx-auto flex justify-between items-center">
-                            <button onclick="state.mode='settings';render()" class="flex items-center gap-1 text-sm text-gray-300 hover:text-white">${Icons.arrowLeft} 戻る</button>
-                            <div class="flex gap-2">
-                                <button onclick="generateDrill()" class="bg-gray-700 px-3 py-1 rounded text-sm flex items-center gap-1">${Icons.refresh} 変更</button>
-                                <button onclick="state.showAns=!state.showAns;render()" class="bg-gray-700 px-3 py-1 rounded text-sm flex items-center gap-1">${state.showAns ? Icons.eyeOff : Icons.eye} ${state.showAns ? '隠す' : '答え'}</button>
-                                <button onclick="window.print()" class="bg-white text-black font-bold px-4 py-1 rounded text-sm flex items-center gap-1">${Icons.printer} 印刷</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="max-w-[210mm] mx-auto p-10 bg-white print-shadow-none shadow-lg min-h-[297mm]">
-                        <div class="flex justify-between items-end pb-2 mb-6">
-                            <h1 class="text-xl font-bold">${themeInfo.label}</h1>
-                            <div class="flex items-end gap-2 border-b border-gray-400 w-48 pb-1">
-                                <span class="text-xs text-gray-500">なまえ</span>
-                            </div>
-                        </div>
-
-                        <div class="flex flex-col gap-6 mb-8">
-                            <div class="flex flex-col md:flex-row gap-6 print-flex-row">
-                                ${state.config.showTable ? `
-                                    <div class="w-full md:w-1/3 print-w-1-3 flex-shrink-0">
-                                        <table class="w-full border-collapse border border-black text-center text-sm">
-                                            <thead class="bg-gray-100">
-                                                <tr>
-                                                    <th class="border border-black p-2 bg-gray-200 print-bg-gray-100">${themeInfo.xLabel}</th>
-                                                    <th class="border border-black p-2 bg-gray-200 print-bg-gray-100">${themeInfo.valueLabel}</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                ${items.map(it => `<tr><td class="border border-black p-2">${it.name}</td><td class="border border-black p-2">${it.value}</td></tr>`).join('')}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                ` : ''}
-                                <div class="flex-1">
-                                    ${svgHtml}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="space-y-6 pt-4">
-                            ${questions.map((q, i) => `
-                                <div class="flex flex-col gap-2">
-                                    <div class="text-base leading-relaxed flex items-start">
-                                        <span class="font-bold mr-2 whitespace-nowrap">問${i+1}.</span>
-                                        <span>${q.text}</span>
-                                    </div>
-                                    <div class="flex justify-end pr-8">
-                                        <div class="w-48 border-b-2 border-black h-8 flex items-end justify-center bg-gray-50 relative pb-1">
-                                            ${state.showAns ? `<span class="text-blue-700 font-bold text-lg leading-none">${q.answer}</span>` : ''}
-                                        </div>
-                                    </div>
-                                </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
+        state.drillData = { items, questions: generatedQuestions, unit, themeInfo: theme };
+        state.mode = 'print';
+        state.showAns = false;
         render();
-    </script>
+    }
+
+    // --- UI 操作 ---
+    function handleConfigChange(key, value) {
+        state.config[key] = value;
+
+        if (key === 'theme') {
+            const t = THEMES[value];
+            const maxCount = t.labels.length;
+            state.config.itemCount = clamp(state.config.itemCount, 2, maxCount);
+            // 1週間テーマは基本7に寄せる
+            if (value === 'weekly_temp') state.config.itemCount = maxCount;
+        }
+
+        if (key === 'itemCount') {
+            const t = THEMES[state.config.theme];
+            const maxCount = t.labels.length;
+            state.config.itemCount = clamp(value, 2, maxCount);
+        }
+
+        if (key === 'questionCount') {
+            state.config.questionCount = clamp(value, 1, 7);
+        }
+    }
+
+    function toggleType(id) {
+        const current = state.config.selectedTypes;
+        state.config.selectedTypes = current.includes(id)
+            ? (current.length > 1 ? current.filter(t => t !== id) : current)
+            : [...current, id];
+        render();
+    }
+
+    function forceRender() { render(); }
+
+    function render() {
+        const app = document.getElementById('app');
+        app.innerHTML = '';
+
+        if (state.mode === 'settings') renderSettings(app);
+        else renderPrint(app);
+    }
+
+    function renderSettings(container) {
+        const currentTheme = THEMES[state.config.theme];
+        const maxDataCount = currentTheme.labels.length;
+
+        const themeBtns = Object.entries(THEMES).map(([key, t]) => `
+            <button onclick="handleConfigChange('theme', '${key}'); forceRender()" class="p-3 rounded border text-left transition-all ${state.config.theme === key ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-500 font-bold' : 'border-gray-300 hover:bg-gray-50'}">${t.label}</button>
+        `).join('');
+
+        const typeChecks = Object.entries(QUESTION_TYPES).map(([id, t]) => `
+            <label class="flex items-center gap-2 p-2 rounded hover:bg-gray-100 cursor-pointer border border-transparent">
+                <div onclick="toggleType('${id}')" class="w-5 h-5 rounded border flex items-center justify-center ${state.config.selectedTypes.includes(id) ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-400'}">
+                    ${state.config.selectedTypes.includes(id) ? Icons.checkSquare : ''}
+                </div>
+                <span class="text-sm">${t.label}</span>
+            </label>
+        `).join('');
+
+        container.innerHTML = `
+            <div class="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-lg mt-8 border border-gray-200">
+                <h2 class="text-xl font-bold mb-6 flex items-center gap-2 border-b pb-2">
+                    <span class="text-gray-600">${Icons.settings}</span> 折れ線グラフドリル設定
+                </h2>
+                <div class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">テーマ</label>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">${themeBtns}</div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700">データ数 (最大${maxDataCount})</label>
+                            <div class="flex items-center gap-2 mt-1">
+                                <button onclick="handleConfigChange('itemCount', Math.max(2, state.config.itemCount - 1)); forceRender()" class="w-8 h-8 bg-gray-200 rounded hover:bg-gray-300">-</button>
+                                <span class="text-xl font-bold w-12 text-center">${state.config.itemCount}</span>
+                                <button onclick="handleConfigChange('itemCount', Math.min(${maxDataCount}, state.config.itemCount + 1)); forceRender()" class="w-8 h-8 bg-gray-200 rounded hover:bg-gray-300">+</button>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-bold text-gray-700">問題数 (最大7)</label>
+                            <div class="flex items-center gap-2 mt-1">
+                                <button onclick="handleConfigChange('questionCount', Math.max(1, state.config.questionCount - 1)); forceRender()" class="w-8 h-8 bg-gray-200 rounded hover:bg-gray-300">-</button>
+                                <span class="text-xl font-bold w-12 text-center">${state.config.questionCount}</span>
+                                <button onclick="handleConfigChange('questionCount', Math.min(7, state.config.questionCount + 1)); forceRender()" class="w-8 h-8 bg-gray-200 rounded hover:bg-gray-300">+</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-2 bg-gray-50 p-4 rounded border border-gray-200">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <div onclick="handleConfigChange('showTable', !state.config.showTable); forceRender()" class="w-5 h-5 rounded border flex items-center justify-center ${state.config.showTable ? 'bg-blue-600 border-blue-600 text-white' : 'bg-white border-gray-400'}">
+                                ${state.config.showTable ? Icons.checkSquare : ''}
+                            </div>
+                            <span class="font-bold text-gray-700">表（テーブル）を表示する</span>
+                        </label>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-bold text-gray-700 mb-2">出題内容</label>
+                        <div class="grid grid-cols-2 gap-1">${typeChecks}</div>
+                    </div>
+                    <button onclick="generateDrill()" class="w-full py-4 bg-blue-700 text-white rounded-lg font-bold text-lg hover:bg-blue-800 shadow-md flex items-center justify-center gap-2 transition">
+                        ${Icons.fileText} ドリルを作成
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    function renderPrint(container) {
+        const { items, questions, unit, themeInfo } = state.drillData;
+        const maxGraphVal = themeInfo.maxVal;
+        const minGraphVal = themeInfo.minGraphVal;
+        const gridStep = themeInfo.gridStep;
+        const subGridStep = themeInfo.subGridStep;
+
+        // グラフ描画（SVG）設定
+        const padding = 40;
+        const graphW = 600;
+        const graphH = 350;
+        const stepX = (graphW - padding * 2) / (items.length - 1 || 1);
+
+        const scaleY = (val) => {
+            const range = maxGraphVal - minGraphVal;
+            const ratio = (val - minGraphVal) / range;
+            return (graphH - padding) - (ratio * (graphH - padding * 2));
+        };
+
+        let points = items.map((it, i) => {
+            const x = padding + (i * stepX);
+            const y = scaleY(it.value);
+            return { x, y, val: it.value, name: it.name };
+        });
+
+        const polylinePoints = points.map(p => `${p.x},${p.y}`).join(' ');
+        const circles = points.map(p => `<circle cx="${p.x}" cy="${p.y}" r="4" fill="black" />`).join('');
+
+        let gridLines = '';
+        for (let v = minGraphVal; v <= maxGraphVal; v += subGridStep) {
+            const y = scaleY(v);
+            const isGridStep = (v % gridStep === 0);
+            const strokeColor = isGridStep ? "#9ca3af" : "#e5e7eb";
+            const strokeWidth = isGridStep ? 1.5 : 1;
+
+            gridLines += `<line x1="${padding}" y1="${y}" x2="${graphW - padding}" y2="${y}" stroke="${strokeColor}" stroke-width="${strokeWidth}" />`;
+
+            if (isGridStep) {
+                gridLines += `<text x="${padding - 8}" y="${y + 4}" text-anchor="end" font-size="12" fill="#1f2937" font-weight="bold">${v}</text>`;
+            }
+        }
+        gridLines += `<text x="${padding - 20}" y="${padding - 20}" font-size="12" font-weight="bold">(${unit})</text>`;
+
+        const xLabels = points.map(p => {
+            const fontSize = items.length > 10 ? 10 : 12;
+            return `<text x="${p.x}" y="${graphH - padding + 20}" text-anchor="middle" font-size="${fontSize}" font-weight="bold">${p.name}</text>`;
+        }).join('');
+
+        const svgHtml = `
+            <svg viewBox="0 0 ${graphW} ${graphH}" class="w-full h-auto p-2 bg-white">
+                ${gridLines}
+                ${points.map(p => `<line x1="${p.x}" y1="${padding}" x2="${p.x}" y2="${graphH - padding}" stroke="#f3f4f6" stroke-width="1" />`).join('')}
+
+                <line x1="${padding}" y1="${padding}" x2="${padding}" y2="${graphH - padding}" stroke="black" stroke-width="2" />
+                <line x1="${padding}" y1="${graphH - padding}" x2="${graphW - padding}" y2="${graphH - padding}" stroke="black" stroke-width="2" />
+
+                <polyline points="${polylinePoints}" fill="none" stroke="black" stroke-width="2" stroke-linejoin="round" />
+                ${circles}
+
+                ${xLabels}
+            </svg>
+        `;
+
+        container.innerHTML = `
+            <div class="min-h-screen bg-white">
+                <div class="no-print bg-gray-800 text-white p-4 sticky top-0 z-50 shadow-md">
+                    <div class="max-w-4xl mx-auto flex justify-between items-center">
+                        <button onclick="state.mode='settings';render()" class="flex items-center gap-1 text-sm text-gray-300 hover:text-white">${Icons.arrowLeft} 戻る</button>
+                        <div class="flex gap-2">
+                            <button onclick="generateDrill()" class="bg-gray-700 px-3 py-1 rounded text-sm flex items-center gap-1">${Icons.refresh} 変更</button>
+                            <button onclick="state.showAns=!state.showAns;render()" class="bg-gray-700 px-3 py-1 rounded text-sm flex items-center gap-1">${state.showAns ? Icons.eyeOff : Icons.eye} ${state.showAns ? '隠す' : '答え'}</button>
+                            <button onclick="window.print()" class="bg-white text-black font-bold px-4 py-1 rounded text-sm flex items-center gap-1">${Icons.printer} 印刷</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="max-w-[210mm] mx-auto p-10 bg-white print-shadow-none shadow-lg min-h-[297mm]">
+                    <div class="flex justify-between items-end pb-2 mb-6">
+                        <h1 class="text-xl font-bold">${themeInfo.label}</h1>
+                        <div class="flex items-end gap-2 border-b border-gray-400 w-48 pb-1">
+                            <span class="text-xs text-gray-500">なまえ</span>
+                        </div>
+                    </div>
+
+                    <div class="flex flex-col gap-6 mb-8">
+                        <div class="flex flex-col md:flex-row gap-6 print-flex-row">
+                            ${state.config.showTable ? `
+                                <div class="w-full md:w-1/3 print-w-1-3 flex-shrink-0">
+                                    <table class="w-full border-collapse border border-black text-center text-sm">
+                                        <thead class="bg-gray-100">
+                                            <tr>
+                                                <th class="border border-black p-2 bg-gray-200 print-bg-gray-100">${themeInfo.xLabel}</th>
+                                                <th class="border border-black p-2 bg-gray-200 print-bg-gray-100">${themeInfo.valueLabel}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${items.map(it => `<tr><td class="border border-black p-2">${it.name}</td><td class="border border-black p-2">${it.value}</td></tr>`).join('')}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            ` : ''}
+                            <div class="flex-1">
+                                ${svgHtml}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6 pt-4">
+                        ${questions.map((q, i) => `
+                            <div class="flex flex-col gap-2">
+                                <div class="text-base leading-relaxed flex items-start">
+                                    <span class="font-bold mr-2 whitespace-nowrap">問${i + 1}.</span>
+                                    <span>${q.text}</span>
+                                </div>
+                                <div class="flex justify-end pr-8">
+                                    <div class="w-48 border-b-2 border-black h-8 flex items-end justify-center bg-gray-50 relative pb-1">
+                                        ${state.showAns ? `<span class="text-blue-700 font-bold text-lg leading-none">${q.answer}</span>` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    render();
+</script>
 </body>
 </html>
