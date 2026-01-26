@@ -25,6 +25,22 @@
             .print-bg-gray-100 { background-color: #f3f4f6 !important; -webkit-print-color-adjust: exact; }
             .print-bg-gray-50 { background-color: #f9fafb !important; -webkit-print-color-adjust: exact; }
         }
+        
+        /* 編集可能エリアのスタイル */
+        .editable-text:hover {
+            background-color: #f0f9ff;
+            outline: 1px dashed #3b82f6;
+            cursor: text;
+        }
+        .editable-text:focus {
+            background-color: #ffffff;
+            outline: 2px solid #2563eb;
+            border-radius: 2px;
+        }
+
+        /* グラフ操作用 */
+        .grab-cursor { cursor: grab; }
+        .grabbing { cursor: grabbing !important; }
     </style>
 </head>
 <body class="bg-gray-50 text-gray-900 min-h-screen">
@@ -62,24 +78,9 @@
             minGraphVal: 0,
             gridStep: 5,
             subGridStep: 1,
-
-            // ★ ここがポイント：パターン生成
             seriesGenerator: (count) => {
-                const patterns = [
-                    'smooth',
-                    'up',
-                    'down',
-                    'zigzag',
-                    'jump_up',
-                    'jump_down',
-                    'up_then_down',
-                    'down_then_up',
-                    'flat_then_jump'
-                ];
+                const patterns = ['smooth', 'up', 'down', 'zigzag', 'jump_up', 'jump_down', 'up_then_down', 'down_then_up', 'flat_then_jump'];
                 const p = choice(patterns);
-
-                // 値の“だいたいの季節感”を少しだけ出す（毎回ランダム）
-                // 例）春〜秋寄り：12〜28度、冬寄り：2〜15度、暑め：22〜33度
                 const season = choice(['mild', 'cool', 'hot']);
                 let baseRange;
                 if (season === 'cool') baseRange = [3, 15];
@@ -98,7 +99,6 @@
                         const wave = Math.sin(t * Math.PI * 2 + phase);
                         vals[i] = base + amp * wave + drift * i + rand(-0.6, 0.6);
                     }
-                    // ちょい平滑化（滑らか寄り）
                     vals = vals.map((v, i) => {
                         const a = vals[Math.max(0, i - 1)];
                         const b = vals[i];
@@ -106,7 +106,6 @@
                         return (a + b + c) / 3;
                     });
                 }
-
                 if (p === 'up' || p === 'down') {
                     const start = base + rand(-3, 3);
                     const step = rand(0.6, 3.0);
@@ -114,13 +113,11 @@
                         const dir = (p === 'up') ? 1 : -1;
                         vals[i] = start + dir * step * i + rand(-0.6, 0.6);
                     }
-                    // 単調性を保ちやすいように軽く補正
                     for (let i = 1; i < count; i++) {
                         if (p === 'up' && vals[i] < vals[i - 1] - 0.2) vals[i] = vals[i - 1] + rand(0.2, 1.0);
                         if (p === 'down' && vals[i] > vals[i - 1] + 0.2) vals[i] = vals[i - 1] - rand(0.2, 1.0);
                     }
                 }
-
                 if (p === 'zigzag') {
                     let v = base + rand(-2, 2);
                     const swing = rand(1.5, 4.5);
@@ -131,12 +128,10 @@
                         vals[i] = v;
                     }
                 }
-
                 if (p === 'jump_up' || p === 'jump_down') {
                     const jumpIdx = Math.floor(rand(2, count - 2));
                     const preTrend = rand(-0.5, 1.2);
                     const jump = rand(6, 12) * (p === 'jump_up' ? 1 : -1);
-
                     let v = base + rand(-2, 2);
                     for (let i = 0; i < count; i++) {
                         if (i === jumpIdx) v += jump;
@@ -144,7 +139,6 @@
                         vals[i] = v;
                     }
                 }
-
                 if (p === 'up_then_down' || p === 'down_then_up') {
                     const peakIdx = Math.floor(rand(2, count - 2));
                     const upStep = rand(0.8, 2.8);
@@ -159,7 +153,6 @@
                         vals[i] = v;
                     }
                 }
-
                 if (p === 'flat_then_jump') {
                     const jumpIdx = Math.floor(rand(2, count - 1));
                     const flatNoise = rand(0.1, 0.6);
@@ -177,10 +170,7 @@
                     }
                 }
 
-                // 最後に“現実っぽく”範囲内へ
                 vals = vals.map(v => clamp(v, 0, 35));
-
-                // 7点しかないので、極端に上下しすぎたときだけ少し丸める
                 const span = Math.max(...vals) - Math.min(...vals);
                 if (span > 22) {
                     vals = vals.map((v, i) => {
@@ -190,11 +180,9 @@
                         return (a + 2 * b + c) / 4;
                     });
                 }
-
                 return vals;
             }
         },
-
         monthly_temp: {
             label: '月ごとの平均気温の変化',
             unit: '度',
@@ -275,10 +263,125 @@
             unit: '',
             themeInfo: null
         },
-        showAns: false
+        showAns: false,
+        dragging: { index: -1 }
     };
 
     // --- ロジック ---
+
+    // 質問の正解を計算する（問題文生成時＆グラフ操作時）
+    function calculateAnswerAndText(type, items, theme, metadata = {}) {
+        const subject = theme.subjectLabel;
+        const unit = theme.unit;
+        const adjectiveMax = theme.unit === '度' ? '高い' : '多い';
+        const adjectiveMin = theme.unit === '度' ? '低い' : '少ない';
+        
+        let text = "";
+        let answer = "";
+        let newMetadata = { ...metadata, type };
+
+        switch (type) {
+            case 'read':
+                // メタデータに対象インデックスがあればそれを使う、なければランダム
+                let targetIdx = metadata.targetIdx;
+                if (targetIdx === undefined) targetIdx = Math.floor(Math.random() * items.length);
+                
+                const target = items[targetIdx];
+                text = `${target.name}のときの${subject}は、何${unit} ですか。`;
+                answer = `${target.value}${unit}`;
+                newMetadata.targetIdx = targetIdx;
+                break;
+
+            case 'max':
+                const maxVal = Math.max(...items.map(i => i.value));
+                const maxItem = items.find(i => i.value === maxVal);
+                text = `一番 ${subject}が${adjectiveMax}のは、何${theme.xLabel} ですか。`;
+                answer = maxItem.name;
+                break;
+
+            case 'min':
+                const minVal = Math.min(...items.map(i => i.value));
+                const minItem = items.find(i => i.value === minVal);
+                text = `一番 ${subject}が${adjectiveMin}のは、何${theme.xLabel} ですか。`;
+                answer = minItem.name;
+                break;
+
+            case 'increase_max':
+                let maxInc = -999;
+                let incPeriod = 'なし';
+                for (let j = 0; j < items.length - 1; j++) {
+                    let diff = items[j + 1].value - items[j].value;
+                    if (diff > maxInc) {
+                        maxInc = diff;
+                        incPeriod = `${items[j].name}から${items[j + 1].name}`;
+                    }
+                }
+                // 期間の問いなので、増えていない場合でも答えを用意する（または問題文を変える）
+                // ここではシンプルに「一番増えた期間」を聞くが、全部減っている場合は「なし」とする等の処理
+                if (maxInc <= 0) {
+                     answer = 'なし';
+                } else {
+                     answer = incPeriod;
+                }
+                text = `一番 ${theme.unit === '度' ? '上がった' : '増えた'}のは、いつからいつの間ですか。`;
+                break;
+
+            case 'decrease_max':
+                let maxDec = -999;
+                let decPeriod = 'なし';
+                for (let j = 0; j < items.length - 1; j++) {
+                    let diff = items[j].value - items[j + 1].value;
+                    if (diff > maxDec) {
+                        maxDec = diff;
+                        decPeriod = `${items[j].name}から${items[j + 1].name}`;
+                    }
+                }
+                if (maxDec <= 0) {
+                     answer = 'なし';
+                } else {
+                     answer = decPeriod;
+                }
+                text = `一番 ${theme.unit === '度' ? '下がった' : '減った'}のは、いつからいつの間ですか。`;
+                break;
+
+            case 'diff':
+                let idxA = metadata.idxA;
+                let idxB = metadata.idxB;
+                if (idxA === undefined) {
+                    idxA = Math.floor(Math.random() * items.length);
+                    idxB = Math.floor(Math.random() * items.length);
+                    while (idxA === idxB && items.length > 1) idxB = Math.floor(Math.random() * items.length);
+                }
+                
+                const valA = items[idxA];
+                const valB = items[idxB];
+                const diffVal = Math.abs(valA.value - valB.value);
+                text = `${valA.name}と${valB.name}の ちがいは 何${unit} ですか。`;
+                answer = `${diffVal}${unit}`;
+                newMetadata.idxA = idxA;
+                newMetadata.idxB = idxB;
+                break;
+
+            case 'cond_more':
+                const vals = items.map(i => i.value);
+                const mid = Math.floor((Math.min(...vals) + Math.max(...vals)) / 2);
+                let threshold = metadata.threshold;
+                
+                if (threshold === undefined) {
+                    const step = theme.subGridStep || 1;
+                    threshold = Math.round(mid / step) * step;
+                    if (threshold <= Math.min(...vals)) threshold += step;
+                }
+
+                const countMore = items.filter(i => i.value >= threshold).length;
+                text = `${threshold}${unit}以上のときは、全部で 何回ありますか。`;
+                answer = `${countMore}回`;
+                newMetadata.threshold = threshold;
+                break;
+        }
+
+        return { text, answer, metadata: newMetadata };
+    }
 
     function generateDrill() {
         const theme = THEMES[state.config.theme];
@@ -290,7 +393,6 @@
         let items = [];
         const labels = theme.labels.slice(0, count);
 
-        // ★ テーマに seriesGenerator があればそれを使う（1週間気温がここ）
         let rawVals = null;
         if (typeof theme.seriesGenerator === 'function') {
             rawVals = theme.seriesGenerator(count);
@@ -314,89 +416,8 @@
 
         for (let i = 0; i < state.config.questionCount; i++) {
             const type = pool[i % pool.length];
-            let q = { text: '', answer: '' };
-            const target = items[Math.floor(Math.random() * items.length)];
-
-            const subject = theme.subjectLabel;
-            const adjectiveMax = theme.unit === '度' ? '高い' : '多い';
-            const adjectiveMin = theme.unit === '度' ? '低い' : '少ない';
-
-            switch (type) {
-                case 'read':
-                    q.text = `${target.name}のときの${subject}は、何${unit} ですか。`;
-                    q.answer = `${target.value}${unit}`;
-                    break;
-                case 'max':
-                    const maxVal = Math.max(...items.map(i => i.value));
-                    const maxItem = items.find(i => i.value === maxVal);
-                    q.text = `一番 ${subject}が${adjectiveMax}のは、何${theme.xLabel} ですか。`;
-                    q.answer = maxItem.name;
-                    break;
-                case 'min':
-                    const minVal = Math.min(...items.map(i => i.value));
-                    const minItem = items.find(i => i.value === minVal);
-                    q.text = `一番 ${subject}が${adjectiveMin}のは、何${theme.xLabel} ですか。`;
-                    q.answer = minItem.name;
-                    break;
-                case 'increase_max':
-                    let maxInc = -999;
-                    let incPeriod = '';
-                    for (let j = 0; j < items.length - 1; j++) {
-                        let diff = items[j + 1].value - items[j].value;
-                        if (diff > maxInc) {
-                            maxInc = diff;
-                            incPeriod = `${items[j].name}から${items[j + 1].name}`;
-                        }
-                    }
-                    if (maxInc <= 0) {
-                        q.text = `${target.name}のときの${subject}は、何${unit} ですか。`;
-                        q.answer = `${target.value}${unit}`;
-                    } else {
-                        q.text = `一番 ${theme.unit === '度' ? '上がった' : '増えた'}のは、いつからいつの間ですか。`;
-                        q.answer = incPeriod;
-                    }
-                    break;
-                case 'decrease_max':
-                    let maxDec = -999;
-                    let decPeriod = '';
-                    for (let j = 0; j < items.length - 1; j++) {
-                        let diff = items[j].value - items[j + 1].value;
-                        if (diff > maxDec) {
-                            maxDec = diff;
-                            decPeriod = `${items[j].name}から${items[j + 1].name}`;
-                        }
-                    }
-                    if (maxDec <= 0) {
-                        q.text = `${target.name}のときの${subject}は、何${unit} ですか。`;
-                        q.answer = `${target.value}${unit}`;
-                    } else {
-                        q.text = `一番 ${theme.unit === '度' ? '下がった' : '減った'}のは、いつからいつの間ですか。`;
-                        q.answer = decPeriod;
-                    }
-                    break;
-                case 'diff':
-                    const idxA = Math.floor(Math.random() * items.length);
-                    let idxB = Math.floor(Math.random() * items.length);
-                    while (idxA === idxB && items.length > 1) idxB = Math.floor(Math.random() * items.length);
-                    const valA = items[idxA];
-                    const valB = items[idxB];
-                    const diffVal = Math.abs(valA.value - valB.value);
-                    q.text = `${valA.name}と${valB.name}の ちがいは 何${unit} ですか。`;
-                    q.answer = `${diffVal}${unit}`;
-                    break;
-                case 'cond_more':
-                    const vals = items.map(i => i.value);
-                    const mid = Math.floor((Math.min(...vals) + Math.max(...vals)) / 2);
-                    const step = theme.subGridStep || 1;
-                    let threshold = Math.round(mid / step) * step;
-                    if (threshold <= Math.min(...vals)) threshold += step;
-
-                    const countMore = items.filter(i => i.value >= threshold).length;
-                    q.text = `${threshold}${unit}以上のときは、全部で 何回ありますか。`;
-                    q.answer = `${countMore}回`;
-                    break;
-            }
-            generatedQuestions.push(q);
+            const result = calculateAnswerAndText(type, items, theme, {});
+            generatedQuestions.push(result);
         }
 
         state.drillData = { items, questions: generatedQuestions, unit, themeInfo: theme };
@@ -405,27 +426,37 @@
         render();
     }
 
+    // グラフの値が変更されたときに答えのみ再計算する（問題文テキストはユーザー編集を尊重するため維持する）
+    function recalculateAnswers() {
+        const { items, questions, themeInfo } = state.drillData;
+        const newQuestions = questions.map(q => {
+            // メタデータを使って再計算
+            const result = calculateAnswerAndText(q.metadata.type, items, themeInfo, q.metadata);
+            // テキストは既存のものを維持（ユーザー編集対応）、答えだけ更新
+            return {
+                ...q,
+                answer: result.answer
+            };
+        });
+        state.drillData.questions = newQuestions;
+        render(); // 再描画
+    }
+
     // --- UI 操作 ---
     function handleConfigChange(key, value) {
         state.config[key] = value;
-
         if (key === 'theme') {
             const t = THEMES[value];
             const maxCount = t.labels.length;
             state.config.itemCount = clamp(state.config.itemCount, 2, maxCount);
-            // 1週間テーマは基本7に寄せる
             if (value === 'weekly_temp') state.config.itemCount = maxCount;
         }
-
         if (key === 'itemCount') {
             const t = THEMES[state.config.theme];
             const maxCount = t.labels.length;
             state.config.itemCount = clamp(value, 2, maxCount);
         }
-
-        if (key === 'questionCount') {
-            state.config.questionCount = clamp(value, 1, 7);
-        }
+        if (key === 'questionCount') state.config.questionCount = clamp(value, 1, 7);
     }
 
     function toggleType(id) {
@@ -436,7 +467,90 @@
         render();
     }
 
+    // 問題文の編集ハンドラ
+    function handleQuestionEdit(index, newText) {
+        state.drillData.questions[index].text = newText;
+    }
+
     function forceRender() { render(); }
+
+    // --- グラフ操作ロジック ---
+    function getGraphParams() {
+        // SVGのサイズ定義
+        return { padding: 40, graphW: 600, graphH: 350 };
+    }
+
+    function startDrag(index, event) {
+        event.preventDefault();
+        state.dragging.index = index;
+        
+        // カーソルスタイル変更のためのクラス付与など（今回は全体再描画しないのでDOM直接操作もありだが、簡単のためクラス付与は親要素へ）
+        document.body.classList.add('grabbing');
+        
+        // イベントリスナー追加
+        window.addEventListener('mousemove', onDragMove);
+        window.addEventListener('mouseup', endDrag);
+        window.addEventListener('touchmove', onDragMove, { passive: false });
+        window.addEventListener('touchend', endDrag);
+    }
+
+    function onDragMove(event) {
+        if (state.dragging.index === -1) return;
+        event.preventDefault();
+
+        const { padding, graphW, graphH } = getGraphParams();
+        const { items, themeInfo } = state.drillData;
+        
+        // 座標計算
+        const svgElement = document.getElementById('graph-svg');
+        if (!svgElement) return;
+        
+        const rect = svgElement.getBoundingClientRect();
+        const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+        
+        // SVG内でのY座標 (上からのピクセル)
+        let y = clientY - rect.top;
+        
+        // Y座標を値に変換
+        // y = (graphH - padding) - (ratio * (graphH - padding * 2))
+        // y - (graphH - padding) = - ratio * H_inner
+        // ratio = ((graphH - padding) - y) / H_inner
+        const hInner = graphH - padding * 2;
+        const ratio = ((graphH - padding) - y) / hInner;
+        
+        const range = themeInfo.maxVal - themeInfo.minGraphVal;
+        let val = themeInfo.minGraphVal + ratio * range;
+        
+        // 丸めとクランプ
+        val = Math.round(val);
+        val = clamp(val, themeInfo.minGraphVal, themeInfo.maxVal);
+        
+        // データ更新
+        state.drillData.items[state.dragging.index].value = val;
+        
+        // パフォーマンスのため、ドラッグ中はDOMを直接操作して見た目だけ更新する手もあるが、
+        // 簡易実装としてデータ更新して再描画する（DOM更新頻度が高いがこの要素数なら耐えられる）
+        // ただし `render()` を呼ぶとフォーカスが外れる等の副作用があるため、
+        // ドラッグ中は `renderGraphOnly` のような軽量更新をするか、
+        // または `render` を呼ぶ。今回は `render` を呼ぶ。
+        // inputフォーカス問題はドラッグ中には発生しないのでOK。
+        render(); 
+    }
+
+    function endDrag() {
+        if (state.dragging.index === -1) return;
+        state.dragging.index = -1;
+        document.body.classList.remove('grabbing');
+        
+        window.removeEventListener('mousemove', onDragMove);
+        window.removeEventListener('mouseup', endDrag);
+        window.removeEventListener('touchmove', onDragMove);
+        window.removeEventListener('touchend', endDrag);
+
+        // ドロップ後に答えを再計算
+        recalculateAnswers();
+    }
+
 
     function render() {
         const app = document.getElementById('app');
@@ -520,10 +634,7 @@
         const gridStep = themeInfo.gridStep;
         const subGridStep = themeInfo.subGridStep;
 
-        // グラフ描画（SVG）設定
-        const padding = 40;
-        const graphW = 600;
-        const graphH = 350;
+        const { padding, graphW, graphH } = getGraphParams();
         const stepX = (graphW - padding * 2) / (items.length - 1 || 1);
 
         const scaleY = (val) => {
@@ -535,11 +646,25 @@
         let points = items.map((it, i) => {
             const x = padding + (i * stepX);
             const y = scaleY(it.value);
-            return { x, y, val: it.value, name: it.name };
+            return { x, y, val: it.value, name: it.name, index: i };
         });
 
         const polylinePoints = points.map(p => `${p.x},${p.y}`).join(' ');
-        const circles = points.map(p => `<circle cx="${p.x}" cy="${p.y}" r="4" fill="black" />`).join('');
+        
+        // 操作用のUI生成
+        const circles = points.map(p => `
+            <!-- 見た目の黒丸 (小さくしました r=2.5) -->
+            <circle cx="${p.x}" cy="${p.y}" r="2.5" fill="black" class="pointer-events-none" />
+            <!-- 操作判定用の透明な丸 (大きくして操作しやすく) -->
+            <circle cx="${p.x}" cy="${p.y}" r="12" fill="transparent" class="cursor-pointer grab-cursor hover:fill-blue-500/10 no-print" 
+                onmousedown="startDrag(${p.index}, event)"
+                ontouchstart="startDrag(${p.index}, event)"
+            />
+        `).join('');
+        
+        // ツールチップ的な値表示（ドラッグ中のみ表示など凝れるが、シンプルに）
+        // const valueLabels = points.map(p => `<text x="${p.x}" y="${p.y - 10}" text-anchor="middle" font-size="10">${p.val}</text>`).join('');
+
 
         let gridLines = '';
         for (let v = minGraphVal; v <= maxGraphVal; v += subGridStep) {
@@ -562,26 +687,29 @@
         }).join('');
 
         const svgHtml = `
-            <svg viewBox="0 0 ${graphW} ${graphH}" class="w-full h-auto p-2 bg-white">
+            <svg id="graph-svg" viewBox="0 0 ${graphW} ${graphH}" class="w-full h-auto p-2 bg-white select-none touch-none">
                 ${gridLines}
                 ${points.map(p => `<line x1="${p.x}" y1="${padding}" x2="${p.x}" y2="${graphH - padding}" stroke="#f3f4f6" stroke-width="1" />`).join('')}
 
                 <line x1="${padding}" y1="${padding}" x2="${padding}" y2="${graphH - padding}" stroke="black" stroke-width="2" />
                 <line x1="${padding}" y1="${graphH - padding}" x2="${graphW - padding}" y2="${graphH - padding}" stroke="black" stroke-width="2" />
 
-                <polyline points="${polylinePoints}" fill="none" stroke="black" stroke-width="2" stroke-linejoin="round" />
+                <polyline points="${polylinePoints}" fill="none" stroke="black" stroke-width="2" stroke-linejoin="round" class="pointer-events-none" />
                 ${circles}
 
                 ${xLabels}
             </svg>
         `;
 
+        // contenteditableの要素にイベントリスナを設定するためにHTML生成後に処理が必要だが
+        // innerHTML書き換え方式なので、inputイベントをinlineで書くのが手っ取り早い
         container.innerHTML = `
             <div class="min-h-screen bg-white">
                 <div class="no-print bg-gray-800 text-white p-4 sticky top-0 z-50 shadow-md">
                     <div class="max-w-4xl mx-auto flex justify-between items-center">
                         <button onclick="state.mode='settings';render()" class="flex items-center gap-1 text-sm text-gray-300 hover:text-white">${Icons.arrowLeft} 戻る</button>
                         <div class="flex gap-2">
+                            <span class="text-xs text-gray-400 self-center mr-2 hidden md:block">●グラフの点は動かせます</span>
                             <button onclick="generateDrill()" class="bg-gray-700 px-3 py-1 rounded text-sm flex items-center gap-1">${Icons.refresh} 変更</button>
                             <button onclick="state.showAns=!state.showAns;render()" class="bg-gray-700 px-3 py-1 rounded text-sm flex items-center gap-1">${state.showAns ? Icons.eyeOff : Icons.eye} ${state.showAns ? '隠す' : '答え'}</button>
                             <button onclick="window.print()" class="bg-white text-black font-bold px-4 py-1 rounded text-sm flex items-center gap-1">${Icons.printer} 印刷</button>
@@ -590,15 +718,17 @@
                 </div>
 
                 <div class="max-w-[210mm] mx-auto p-10 bg-white print-shadow-none shadow-lg min-h-[297mm]">
-                    <div class="flex justify-between items-end pb-2 mb-6">
+                    <!-- 余白を狭く修正 (mb-6 -> mb-2) -->
+                    <div class="flex justify-between items-end pb-2 mb-2">
                         <h1 class="text-xl font-bold">${themeInfo.label}</h1>
                         <div class="flex items-end gap-2 border-b border-gray-400 w-48 pb-1">
                             <span class="text-xs text-gray-500">なまえ</span>
                         </div>
                     </div>
 
-                    <div class="flex flex-col gap-6 mb-8">
-                        <div class="flex flex-col md:flex-row gap-6 print-flex-row">
+                    <!-- 余白を狭く修正 (mb-8 -> mb-4) -->
+                    <div class="flex flex-col gap-4 mb-4">
+                        <div class="flex flex-col md:flex-row gap-4 print-flex-row">
                             ${state.config.showTable ? `
                                 <div class="w-full md:w-1/3 print-w-1-3 flex-shrink-0">
                                     <table class="w-full border-collapse border border-black text-center text-sm">
@@ -614,18 +744,20 @@
                                     </table>
                                 </div>
                             ` : ''}
-                            <div class="flex-1">
+                            <div class="flex-1 relative">
                                 ${svgHtml}
+                                <div class="no-print absolute top-2 right-2 text-xs text-gray-400 bg-white/80 p-1 rounded pointer-events-none">黒丸をドラッグして値を変更できます</div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="space-y-6 pt-4">
+                    <div class="space-y-4 pt-2">
                         ${questions.map((q, i) => `
-                            <div class="flex flex-col gap-2">
+                            <div class="flex flex-col gap-1">
                                 <div class="text-base leading-relaxed flex items-start">
                                     <span class="font-bold mr-2 whitespace-nowrap">問${i + 1}.</span>
-                                    <span>${q.text}</span>
+                                    <!-- 出題内容を書き換え可能に -->
+                                    <span class="editable-text p-1 rounded transition-colors w-full" contenteditable="true" oninput="handleQuestionEdit(${i}, this.innerText)">${q.text}</span>
                                 </div>
                                 <div class="flex justify-end pr-8">
                                     <div class="w-48 border-b-2 border-black h-8 flex items-end justify-center bg-gray-50 relative pb-1">
